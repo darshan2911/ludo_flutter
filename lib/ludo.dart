@@ -755,7 +755,7 @@ void moveOutOfBase({
     token,
     MoveToEffect(
       SpotManager().findSpotById(tokenPath.first).tokenPosition,
-      EffectController(duration: 0.1, curve: Curves.easeInOut),
+      EffectController(duration: 0.3, curve: Curves.easeInOut),
     ),
   );
 

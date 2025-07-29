@@ -48,7 +48,19 @@ class LowerController extends RectangleComponent with HasGameReference<Ludo> {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.0
             ..color = const Color(0xFF03346E),
-          children: [],
+          children: [
+            TextComponent(
+              text: 'Blue', // Blue Player
+              position: Vector2(innerWidth * 0.08, innerHeight * 0.25),
+              textRenderer: TextPaint(
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: innerWidth * 0.09,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -109,7 +121,19 @@ class LowerController extends RectangleComponent with HasGameReference<Ludo> {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.0
             ..color = const Color(0xFF03346E),
-          children: [],
+          children: [
+            TextComponent(
+              text: 'Yellow', // Yellow Player
+              position: Vector2(innerWidth * 0.06, innerHeight * 0.25),
+              textRenderer: TextPaint(
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: innerWidth * 0.09,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
