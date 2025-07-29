@@ -316,7 +316,6 @@ class _GameAppState extends State<GameApp> {
             leadingWidth: 100,
             leading: Builder(
               builder: (BuildContext context) {
-                // return Container(color: Colors.amber, height: 100, width: 100);
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

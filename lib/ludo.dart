@@ -960,41 +960,49 @@ Future<void> moveBackward({
   }
 }
 
+bool _isMoving = true;
+
 Future<void> moveForward({
   required World world,
   required Token token,
   required List<String> tokenPath,
   required int diceNumber,
 }) async {
-  // get all spots
   final currentIndex = tokenPath.indexOf(token.positionId);
-  final finalIndex = currentIndex + diceNumber;
+  final finalIndex = (currentIndex + diceNumber).clamp(0, tokenPath.length - 1);
+  final spots = SpotManager().getSpots();
 
   for (int i = currentIndex + 1; i <= finalIndex && i < tokenPath.length; i++) {
+    if (!_isMoving) return;
+
     token.positionId = tokenPath[i];
+
+    final spot = spots.firstWhere((s) => s.uniqueId == token.positionId);
+
+    final effectController = EffectController(
+      duration: 0.22,
+      curve: Curves.easeInOut,
+    );
+
     await _applyEffect(
       token,
-      MoveToEffect(
-        SpotManager()
-            .getSpots()
-            .firstWhere((spot) => spot.uniqueId == token.positionId)
-            .tokenPosition,
-        EffectController(duration: 0.20, curve: Curves.easeInOut),
-      ),
+      MoveToEffect(spot.tokenPosition, effectController),
     );
+
     FlameAudio.play('step_sound.wav');
-    // Add a small delay to reduce CPU strain and smooth the animation
-    Future.delayed(const Duration(milliseconds: 120));
   }
 
-  // if token is in home
-  bool isTokenInHome = await checkTokenInHomeAndHandle(token, world);
+  if (!_isMoving) return;
+
+  final isTokenInHome = await checkTokenInHomeAndHandle(token, world);
+  print("Is token in home: $isTokenInHome");
 
   if (isTokenInHome) {
     resizeTokensOnSpot(world);
   } else {
     tokenCollision(world, token);
   }
+
   clearTokenTrail();
 }
 

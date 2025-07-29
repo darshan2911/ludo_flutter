@@ -94,13 +94,17 @@ class LudoDice extends PositionComponent with TapCallbacks {
 
       // Scale punch effect (quick shrink + back to normal)
       SequenceEffect([
-        ScaleEffect.to(Vector2.all(0.92), EffectController(duration: 0.1, curve: Curves.easeInOut)),
-        ScaleEffect.to(Vector2.all(1.0), EffectController(duration: 0.1, curve: Curves.easeInOut)),
+        ScaleEffect.to(
+          Vector2.all(0.92),
+          EffectController(duration: 0.1, curve: Curves.easeInOut),
+        ),
+        ScaleEffect.to(
+          Vector2.all(1.0),
+          EffectController(duration: 0.1, curve: Curves.easeInOut),
+        ),
       ]),
     ]);
-
   }
-
 
   // Apply a 360-degree rotation effect to the dice
   FutureOr<void> _applyDiceRollEffect() {
@@ -165,13 +169,18 @@ class LudoDice extends PositionComponent with TapCallbacks {
   }
 
   // Handle logic for non-six dice rolls
-  void _handleNonSixRoll(World world, LudoBoard ludoBoard, int diceNumber) {
+  void _handleNonSixRoll(
+    World world,
+    LudoBoard ludoBoard,
+    int diceNumber,
+  ) async {
     final tokensOnBoard = player.tokens
         .where((token) => token.state == TokenState.onBoard)
         .toList();
 
     // if no tokens on board, switch to next player
     if (tokensOnBoard.isEmpty) {
+      await Future.delayed(Duration(seconds: 1));
       GameState().switchToNextPlayer();
       return;
     }
