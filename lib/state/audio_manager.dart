@@ -5,11 +5,10 @@ class AudioManager {
   static AudioSource? _diceSoundSource;
   static AudioSource? _stepSoundSource;
 
-  /// Call this ONCE on game/app startup (in your `onLoad`)
   static Future<void> initialize() async {
     await _soloud.init();
-    _diceSoundSource = await _soloud.loadAsset('assets/audio/dice.mp3');
-    _stepSoundSource = await _soloud.loadAsset('assets/audio/step_sound.mp3');
+    _diceSoundSource = await _soloud.loadAsset('assets/audio/dice.wav');
+    _stepSoundSource = await _soloud.loadAsset('assets/audio/step_sound.wav');
   }
 
   static void playDiceSound() {
@@ -24,7 +23,6 @@ class AudioManager {
     }
   }
 
-  /// Good practice: cleanup sources and SoLoud on game/app exit
   static Future<void> dispose() async {
     if (_diceSoundSource != null) {
       await _soloud.disposeSource(_diceSoundSource!);
