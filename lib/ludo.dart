@@ -811,6 +811,7 @@ void tokenCollision(World world, Token attackerToken) async {
 
   if (wasTokenAttacked) {
     if (player.hasRolledThreeConsecutiveSixes()) {
+      await Future.delayed(Duration(seconds: 1));
       player.resetExtraTurns();
     }
     player.grantAnotherTurn();
@@ -1101,6 +1102,8 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
 
   // Reset extra turns if applicable
   if (player.hasRolledThreeConsecutiveSixes()) {
+    await Future.delayed(Duration(seconds: 1));
+
     await player.resetExtraTurns();
   }
 

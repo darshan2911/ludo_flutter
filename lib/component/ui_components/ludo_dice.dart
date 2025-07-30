@@ -125,6 +125,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
     player.grantAnotherTurn();
 
     if (player.hasRolledThreeConsecutiveSixes()) {
+      await Future.delayed(Duration(seconds: 1));
       GameState().switchToNextPlayer();
       return;
     }
