@@ -1,35 +1,39 @@
-import 'package:flame_audio/flame_audio.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 
 class AudioManager {
-  static AudioPool? _diceSoundPool;
-  static AudioPool? _stepSoundPool;
+  static final SoLoud _soloud = SoLoud.instance;
+  static AudioSource? _diceSoundSource;
+  static AudioSource? _stepSoundSource;
 
-  /// Initialize both dice and step sound pools
+  /// Call this ONCE on game/app startup (in your `onLoad`)
   static Future<void> initialize() async {
-    _diceSoundPool ??= await AudioPool.createFromAsset(
-      path: 'audio/dice.mp3',
-      maxPlayers: 3,
-    );
-
-    _stepSoundPool ??= await AudioPool.createFromAsset(
-      path: 'audio/step_sound.wav',
-      maxPlayers: 5, // more players for rapid token steps
-    );
+    await _soloud.init();
+    _diceSoundSource = await _soloud.loadAsset('assets/audio/dice.mp3');
+    _stepSoundSource = await _soloud.loadAsset('assets/audio/step_sound.mp3');
   }
 
-  static Future<StopFunction> playDiceSound({double volume = 1.0}) async {
-    return await _diceSoundPool!.start(volume: volume);
+  static void playDiceSound() {
+    if (_diceSoundSource != null) {
+      _soloud.play(_diceSoundSource!);
+    }
   }
 
-  static Future<StopFunction> playStepSound({double volume = 1.0}) async {
-    return await _stepSoundPool!.start(volume: volume);
+  static void playStepSound() {
+    if (_stepSoundSource != null) {
+      _soloud.play(_stepSoundSource!);
+    }
   }
 
+  /// Good practice: cleanup sources and SoLoud on game/app exit
   static Future<void> dispose() async {
-    await _diceSoundPool?.dispose();
-    _diceSoundPool = null;
-
-    await _stepSoundPool?.dispose();
-    _stepSoundPool = null;
+    if (_diceSoundSource != null) {
+      await _soloud.disposeSource(_diceSoundSource!);
+      _diceSoundSource = null;
+    }
+    if (_stepSoundSource != null) {
+      await _soloud.disposeSource(_stepSoundSource!);
+      _stepSoundSource = null;
+    }
+    _soloud.deinit();
   }
 }

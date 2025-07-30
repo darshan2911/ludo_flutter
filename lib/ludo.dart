@@ -920,7 +920,7 @@ Future<void> moveBackward({
             .getSpots()
             .firstWhere((spot) => spot.uniqueId == token.positionId)
             .tokenPosition,
-        EffectController(duration: 0.1, curve: Curves.easeInOut),
+        EffectController(duration: 0.08, curve: Curves.easeInOut),
       ),
     );
   }
@@ -984,9 +984,9 @@ Future<void> moveForward({
         EffectController(duration: 0.20, curve: Curves.easeInOut),
       ),
     );
-    await AudioManager.playStepSound();
+    AudioManager.playStepSound();
     // Add a small delay to reduce CPU strain and smooth the animation
-    Future.delayed(const Duration(milliseconds: 120));
+    await Future.delayed(const Duration(milliseconds: 120));
   }
 
   // if token is in home
