@@ -1083,6 +1083,8 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
     } else {
       // Set rank for current player
       player.rank = playersWhoWon.length;
+      //switch to next player
+      GameState().switchToNextPlayer();
     }
     return true;
   }
