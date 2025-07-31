@@ -384,7 +384,7 @@ class Ludo extends FlameGame
     await GameState().clearPlayers();
     await AudioManager.dispose();
 
-    AudioManager.initialize();
+    await AudioManager.initialize();
 
     for (var team in teams) {
       if (team == 'BP') {

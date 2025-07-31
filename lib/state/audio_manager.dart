@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 class AudioManager {
@@ -6,7 +7,7 @@ class AudioManager {
   static AudioSource? _stepSoundSource;
 
   static Future<void> initialize() async {
-    await _soloud.init();
+    await _soloud.init(bufferSize: Platform.isAndroid ? 256 : 1024);
     _diceSoundSource = await _soloud.loadAsset('assets/audio/dice.wav');
     _stepSoundSource = await _soloud.loadAsset('assets/audio/step_sound.wav');
   }
