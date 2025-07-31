@@ -50,14 +50,17 @@ class LudoDice extends PositionComponent with TapCallbacks {
     GameState().hidePointer();
     player.enableDice = false;
 
-    // Roll the dice and update the dice face
-    GameState().diceNumber = Random().nextInt(6) + 1;
-    diceFace.updateDiceValue(GameState().diceNumber);
-
     playSound();
+
     // Apply dice rotation effect
     // _applyDiceRollEffect();
     _applyAdvancedDiceRollEffect();
+
+    await Future.delayed(const Duration(milliseconds: 450));
+
+    // Roll the dice and update the dice face
+    GameState().diceNumber = Random().nextInt(6) + 1;
+    diceFace.updateDiceValue(GameState().diceNumber);
 
     await Future.delayed(const Duration(milliseconds: 300));
 
