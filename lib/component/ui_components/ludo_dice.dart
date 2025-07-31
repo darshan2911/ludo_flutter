@@ -34,7 +34,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
   final Player player;
 
   void playSound() async {
-    await AudioManager.playDiceSound();
+    AudioManager.playDiceSound();
   }
 
   @override
@@ -50,14 +50,17 @@ class LudoDice extends PositionComponent with TapCallbacks {
     GameState().hidePointer();
     player.enableDice = false;
 
-    // Roll the dice and update the dice face
-    GameState().diceNumber = Random().nextInt(6) + 1;
-    diceFace.updateDiceValue(GameState().diceNumber);
-
     playSound();
+
     // Apply dice rotation effect
     // _applyDiceRollEffect();
     _applyAdvancedDiceRollEffect();
+
+    await Future.delayed(const Duration(milliseconds: 450));
+
+    // Roll the dice and update the dice face
+    GameState().diceNumber = Random().nextInt(6) + 1;
+    diceFace.updateDiceValue(GameState().diceNumber);
 
     await Future.delayed(const Duration(milliseconds: 300));
 
@@ -121,10 +124,11 @@ class LudoDice extends PositionComponent with TapCallbacks {
   }
 
   // Handle logic when the player rolls a 6
-  void _handleSixRoll(World world, LudoBoard ludoBoard, int diceNumber) {
+  void _handleSixRoll(World world, LudoBoard ludoBoard, int diceNumber) async {
     player.grantAnotherTurn();
 
     if (player.hasRolledThreeConsecutiveSixes()) {
+      await Future.delayed(Duration(seconds: 1));
       GameState().switchToNextPlayer();
       return;
     }
@@ -163,6 +167,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
     } else if (allMovableTokens.length > 1) {
       _enableManualTokenSelection(world, tokensInBase, tokensOnBoard);
     } else if (allMovableTokens.isEmpty) {
+      await Future.delayed(Duration(seconds: 1));
       GameState().switchToNextPlayer();
       return;
     }
@@ -204,6 +209,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
     } else if (movableTokens.length > 1) {
       _enableManualTokenSelection(world, tokensInBase, tokensOnBoard);
     } else if (movableTokens.isEmpty) {
+      await Future.delayed(Duration(seconds: 1));
       GameState().switchToNextPlayer();
       return;
     }

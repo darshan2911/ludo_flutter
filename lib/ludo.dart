@@ -384,7 +384,7 @@ class Ludo extends FlameGame
     await GameState().clearPlayers();
     await AudioManager.dispose();
 
-    AudioManager.initialize();
+    await AudioManager.initialize();
 
     for (var team in teams) {
       if (team == 'BP') {
@@ -811,6 +811,7 @@ void tokenCollision(World world, Token attackerToken) async {
 
   if (wasTokenAttacked) {
     if (player.hasRolledThreeConsecutiveSixes()) {
+      await Future.delayed(Duration(seconds: 1));
       player.resetExtraTurns();
     }
     player.grantAnotherTurn();
@@ -920,7 +921,7 @@ Future<void> moveBackward({
             .getSpots()
             .firstWhere((spot) => spot.uniqueId == token.positionId)
             .tokenPosition,
-        EffectController(duration: 0.1, curve: Curves.easeInOut),
+        EffectController(duration: 0.08, curve: Curves.easeInOut),
       ),
     );
   }
@@ -968,41 +969,35 @@ Future<void> moveForward({
   required List<String> tokenPath,
   required int diceNumber,
 }) async {
+  // get all spots
   final currentIndex = tokenPath.indexOf(token.positionId);
-  final finalIndex = (currentIndex + diceNumber).clamp(0, tokenPath.length - 1);
-  final spots = SpotManager().getSpots();
+  final finalIndex = currentIndex + diceNumber;
 
   for (int i = currentIndex + 1; i <= finalIndex && i < tokenPath.length; i++) {
-    if (!_isMoving) return;
-
     token.positionId = tokenPath[i];
-
-    final spot = spots.firstWhere((s) => s.uniqueId == token.positionId);
-
-    final effectController = EffectController(
-      duration: 0.22,
-      curve: Curves.easeInOut,
-    );
-
     await _applyEffect(
       token,
-      MoveToEffect(spot.tokenPosition, effectController),
+      MoveToEffect(
+        SpotManager()
+            .getSpots()
+            .firstWhere((spot) => spot.uniqueId == token.positionId)
+            .tokenPosition,
+        EffectController(duration: 0.20, curve: Curves.easeInOut),
+      ),
     );
-
-    FlameAudio.play('step_sound.wav');
+    AudioManager.playStepSound();
+    // Add a small delay to reduce CPU strain and smooth the animation
+    await Future.delayed(const Duration(milliseconds: 120));
   }
 
-  if (!_isMoving) return;
-
-  final isTokenInHome = await checkTokenInHomeAndHandle(token, world);
-  print("Is token in home: $isTokenInHome");
+  // if token is in home
+  bool isTokenInHome = await checkTokenInHomeAndHandle(token, world);
 
   if (isTokenInHome) {
     resizeTokensOnSpot(world);
   } else {
     tokenCollision(world, token);
   }
-
   clearTokenTrail();
 }
 
@@ -1088,6 +1083,8 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
     } else {
       // Set rank for current player
       player.rank = playersWhoWon.length;
+      //switch to next player
+      GameState().switchToNextPlayer();
     }
     return true;
   }
@@ -1107,6 +1104,8 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
 
   // Reset extra turns if applicable
   if (player.hasRolledThreeConsecutiveSixes()) {
+    await Future.delayed(Duration(seconds: 1));
+
     await player.resetExtraTurns();
   }
 
