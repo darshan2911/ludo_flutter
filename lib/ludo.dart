@@ -938,21 +938,30 @@ void tokenCollision(World world, Token attackerToken) async {
     (player) => player.playerId == attackerToken.playerId,
   );
 
+  bool shouldGetExtraTurn = false;
+
   if (wasTokenAttacked) {
+    print('DEBUG: Token was captured by ${player.playerId}, granting extra turn');
     if (player.hasRolledThreeConsecutiveSixes()) {
       await Future.delayed(Duration(seconds: 1));
       player.resetExtraTurns();
+    } else {
+      player.grantAnotherTurn();
+      shouldGetExtraTurn = true;
     }
-    player.grantAnotherTurn();
   } else {
-    if (GameState().diceNumber != 6) {
+    if (GameState().diceNumber == 6) {
+      print('DEBUG: Rolled 6, ${player.playerId} gets extra turn');
+      shouldGetExtraTurn = true;
+    } else {
+      print('DEBUG: No capture, no 6, switching to next player');
       GameState().switchToNextPlayer();
+      return;
     }
   }
 
-  player.enableDice = true;
-
-  if (GameState().diceNumber == 6 || wasTokenAttacked == true) {
+  if (shouldGetExtraTurn) {
+    player.enableDice = true;
     final lowerController = world.children.whereType<LowerController>().first;
     final upperController = world.children.whereType<UpperController>().first;
     lowerController.showPointer(player.playerId);
@@ -960,7 +969,7 @@ void tokenCollision(World world, Token attackerToken) async {
     
     // If it's a bot player and they get another turn, automatically make the next move
     if (player.isBot) {
-      print('DEBUG: Bot gets another turn after token collision, calling makeMove');
+      print('DEBUG: Bot ${player.playerId} gets another turn, calling makeMove');
       Future.delayed(Duration(milliseconds: 1000), () {
         BotController.instance.makeMove(player);
       });

@@ -138,7 +138,9 @@ class LudoDice extends PositionComponent with TapCallbacks {
 
   // Handle logic when the player rolls a 6
   void _handleSixRoll(World world, LudoBoard ludoBoard, int diceNumber) async {
-    print('DEBUG: _handleSixRoll called for player ${player.playerId}, isBot: ${player.isBot}');
+    print(
+      'DEBUG: _handleSixRoll called for player ${player.playerId}, isBot: ${player.isBot}',
+    );
     player.grantAnotherTurn();
 
     if (player.hasRolledThreeConsecutiveSixes()) {
@@ -160,7 +162,9 @@ class LudoDice extends PositionComponent with TapCallbacks {
         .toList();
 
     final allMovableTokens = [...movableTokens, ...tokensInBase];
-    print('DEBUG: Player ${player.playerId} has ${allMovableTokens.length} movable tokens (${tokensInBase.length} in base, ${movableTokens.length} on board)');
+    print(
+      'DEBUG: Player ${player.playerId} has ${allMovableTokens.length} movable tokens (${tokensInBase.length} in base, ${movableTokens.length} on board)',
+    );
 
     // if only one token can move, move it
     if (allMovableTokens.length == 1) {
@@ -181,7 +185,9 @@ class LudoDice extends PositionComponent with TapCallbacks {
       }
       return;
     } else if (allMovableTokens.length > 1) {
-      print('DEBUG: Multiple tokens can move for player ${player.playerId}, enabling manual selection');
+      print(
+        'DEBUG: Multiple tokens can move for player ${player.playerId}, enabling manual selection',
+      );
       _enableManualTokenSelection(world, tokensInBase, tokensOnBoard);
     } else if (allMovableTokens.isEmpty) {
       print('DEBUG: No movable tokens for player ${player.playerId}');
@@ -246,7 +252,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
     for (var token in player.tokens) {
       token.enableToken = true;
     }
-    
+
     // Set game state flags
     if (tokensInBase.isNotEmpty && tokensOnBoard.isNotEmpty) {
       GameState().enableMoveFromBoth();
