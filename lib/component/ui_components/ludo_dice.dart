@@ -12,6 +12,7 @@ import 'dice_face_component.dart';
 import '../../state/game_state.dart';
 import '../../state/audio_manager.dart';
 import '../../state/player.dart';
+import '../../state/bot_controller.dart';
 import '../../ludo_board.dart';
 import 'token.dart';
 // import '../../ludo_flame.dart';
@@ -39,6 +40,16 @@ class LudoDice extends PositionComponent with TapCallbacks {
 
   @override
   void onTapDown(TapDownEvent event) async {
+    // Disable manual tapping for bot players
+    if (player.isBot) {
+      print('DEBUG: Manual dice tap blocked for bot player ${player.playerId}');
+      return;
+    }
+    await executeDiceRoll(withAnimation: true);
+  }
+
+  /// Common dice roll logic used by both human and bot players
+  Future<void> executeDiceRoll({bool withAnimation = true}) async {
     if (!player.enableDice ||
         !player.isCurrentTurn ||
         player != GameState().currentPlayer) {
@@ -52,11 +63,13 @@ class LudoDice extends PositionComponent with TapCallbacks {
 
     playSound();
 
-    // Apply dice rotation effect
-    // _applyDiceRollEffect();
-    _applyAdvancedDiceRollEffect();
-
-    await Future.delayed(const Duration(milliseconds: 450));
+    // Apply dice animation only if requested
+    if (withAnimation) {
+      _applyAdvancedDiceRollEffect();
+      await Future.delayed(const Duration(milliseconds: 450));
+    } else {
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
 
     // Roll the dice and update the dice face
     GameState().diceNumber = Random().nextInt(6) + 1;
@@ -125,6 +138,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
 
   // Handle logic when the player rolls a 6
   void _handleSixRoll(World world, LudoBoard ludoBoard, int diceNumber) async {
+    print('DEBUG: _handleSixRoll called for player ${player.playerId}, isBot: ${player.isBot}');
     player.grantAnotherTurn();
 
     if (player.hasRolledThreeConsecutiveSixes()) {
@@ -146,9 +160,11 @@ class LudoDice extends PositionComponent with TapCallbacks {
         .toList();
 
     final allMovableTokens = [...movableTokens, ...tokensInBase];
+    print('DEBUG: Player ${player.playerId} has ${allMovableTokens.length} movable tokens (${tokensInBase.length} in base, ${movableTokens.length} on board)');
 
     // if only one token can move, move it
     if (allMovableTokens.length == 1) {
+      print('DEBUG: Moving single token for player ${player.playerId}');
       if (allMovableTokens.first.state == TokenState.inBase) {
         moveOutOfBase(
           world: world,
@@ -165,8 +181,10 @@ class LudoDice extends PositionComponent with TapCallbacks {
       }
       return;
     } else if (allMovableTokens.length > 1) {
+      print('DEBUG: Multiple tokens can move for player ${player.playerId}, enabling manual selection');
       _enableManualTokenSelection(world, tokensInBase, tokensOnBoard);
     } else if (allMovableTokens.isEmpty) {
+      print('DEBUG: No movable tokens for player ${player.playerId}');
       await Future.delayed(Duration(seconds: 1));
       GameState().switchToNextPlayer();
       return;
@@ -224,9 +242,12 @@ class LudoDice extends PositionComponent with TapCallbacks {
     GameState().hidePointer();
     player.enableDice = false;
 
+    // Enable tokens for both human and bot players
     for (var token in player.tokens) {
       token.enableToken = true;
     }
+    
+    // Set game state flags
     if (tokensInBase.isNotEmpty && tokensOnBoard.isNotEmpty) {
       GameState().enableMoveFromBoth();
       addTokenTrail(tokensInBase, tokensOnBoard);
@@ -237,6 +258,15 @@ class LudoDice extends PositionComponent with TapCallbacks {
       addTokenTrail(tokensInBase, tokensOnBoard);
       GameState().enableMoveOnBoard();
     }
+
+    // If this is a bot player, let bot choose the token
+    if (player.isBot) {
+      print('DEBUG: Bot player detected, calling simulateTokenTap');
+      BotController.instance.simulateTokenTap(player, GameState().diceNumber);
+      return;
+    }
+
+    print('DEBUG: Human player, manual token selection enabled');
   }
 
   // Move the token forward on the board

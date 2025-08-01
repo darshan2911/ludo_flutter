@@ -1,5 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:ludo_flame/component/ui_components/token.dart';
+// Import the bot controller
+import 'bot_controller.dart';
 
 import 'player.dart';
 import 'event_bus.dart';
@@ -11,8 +14,11 @@ class GameState {
   // Singleton instance
   static final GameState _instance = GameState._();
 
-  List<int> diceChances =
-      List.filled(3, 0, growable: false); // Track consecutive 6s
+  List<int> diceChances = List.filled(
+    3,
+    0,
+    growable: false,
+  ); // Track consecutive 6s
   var diceNumber = 5;
 
   List<Player> players = [];
@@ -60,6 +66,7 @@ class GameState {
 
   void switchToNextPlayer() {
     var current = currentPlayer;
+    print('DEBUG: Current player ${current.playerId} isBot: ${current.isBot}');
     current.isCurrentTurn = false;
     current.enableDice = false;
     EventBus().emit(SwitchPointerEvent());
@@ -71,8 +78,20 @@ class GameState {
     } while (players[currentPlayerIndex].hasWon);
 
     var nextPlayer = players[currentPlayerIndex];
+    print('DEBUG: Next player ${nextPlayer.playerId} isBot: ${nextPlayer.isBot} BEFORE setting turn');
     nextPlayer.isCurrentTurn = true;
     nextPlayer.enableDice = true;
+    print('DEBUG: Next player ${nextPlayer.playerId} isBot: ${nextPlayer.isBot} AFTER setting turn');
+
+    // Handle bot player automatically
+    if (nextPlayer.isBot) {
+      print('DEBUG: Bot player detected, calling makeMove');
+      Future.delayed(Duration(milliseconds: 500), () {
+        BotController.instance.makeMove(nextPlayer);
+      });
+    } else {
+      print('DEBUG: Human player, not calling makeMove');
+    }
 
     // Disable tokens of the current player
     for (var token in currentPlayer.tokens) {
@@ -93,6 +112,31 @@ class GameState {
       case 'YP':
         EventBus().emit(BlinkYellowBaseEvent());
         break;
+    }
+    print('Next player: ${nextPlayer.playerId}, isBot: ${nextPlayer.isBot}');
+  }
+
+  // Add method to initialize bot players
+  void initializeBotPlayer(String playerId, List<Token> tokens) {
+    Player botPlayer = Player(
+      playerId: playerId,
+      tokens: tokens,
+      isBot: true, // This is the key difference
+    );
+    players.add(botPlayer);
+  }
+
+  // Add method to check if game is vs computer
+  bool isVsComputerGame() {
+    return players.any((player) => player.isBot);
+  }
+
+  // Add method to get bot player
+  Player? getBotPlayer() {
+    try {
+      return players.firstWhere((player) => player.isBot);
+    } catch (e) {
+      return null;
     }
   }
 

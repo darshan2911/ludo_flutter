@@ -5,7 +5,9 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:ludo_flame/bot_difficulty_screen.dart';
 import 'package:ludo_flame/ludo.dart';
+import 'package:ludo_flame/state/bot_controller.dart';
 // user files
 
 void main() {
@@ -59,24 +61,62 @@ class FirstScreenState extends State<FirstScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'Select Number of Players',
+                  'Select Game Mode',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
+
+                // VS Computer Button
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.8,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.yellow, // Set button color to yellow
+                      backgroundColor: Colors.orange,
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(20.0),
-                        ), // Set border radius
+                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BotDifficultyScreen(),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.smart_toy, color: Colors.white, size: 24),
+                        SizedBox(width: 10),
+                        Text(
+                          'VS Computer',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 2 Player Game Button
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.yellow,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
                       ),
                     ),
                     onPressed: () {
@@ -87,21 +127,21 @@ class FirstScreenState extends State<FirstScreen> {
                               const SecondScreen(selectedPlayerCount: 2),
                         ),
                       );
-                    }, // Button is disabled if no selection
-                    child: const Text('2 player game'),
+                    },
+                    child: const Text('2 Player Game'),
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
+                // 4 Player Game Button
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.8,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.yellow, // Set button color to yellow
+                      backgroundColor: Colors.yellow,
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(20.0),
-                        ), // Set border radius
+                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
                       ),
                     ),
                     onPressed: () {
@@ -113,8 +153,8 @@ class FirstScreenState extends State<FirstScreen> {
                           ),
                         ),
                       );
-                    }, // Button is disabled if no selection
-                    child: const Text('4 player game'),
+                    },
+                    child: const Text('4 Player Game'),
                   ),
                 ),
               ],
@@ -283,8 +323,13 @@ class SecondScreenState extends State<SecondScreen> {
 
 class GameApp extends StatefulWidget {
   final List<String> selectedTeams;
+  final bool isVsComputer;
 
-  const GameApp({super.key, required this.selectedTeams});
+  const GameApp({
+    super.key,
+    required this.selectedTeams,
+    this.isVsComputer = false,
+  });
 
   @override
   State<GameApp> createState() => _GameAppState();
@@ -292,11 +337,14 @@ class GameApp extends StatefulWidget {
 
 class _GameAppState extends State<GameApp> {
   Ludo? game;
-
   @override
   void initState() {
     super.initState();
-    game = Ludo(widget.selectedTeams, context); // Initialize game instance
+    if (widget.isVsComputer) {
+      game = Ludo(widget.selectedTeams, context, isVsComputer: true);
+    } else {
+      game = Ludo(widget.selectedTeams, context);
+    }
   }
 
   @override
@@ -314,6 +362,18 @@ class _GameAppState extends State<GameApp> {
           appBar: AppBar(
             backgroundColor: Color(0xff1E3E62),
             leadingWidth: 100,
+            title: widget.isVsComputer
+                ? Row(
+                    children: [
+                      Icon(Icons.smart_toy, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'VS Computer (${BotController.instance.getBotDifficulty().name.toUpperCase()})',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  )
+                : null,
             leading: Builder(
               builder: (BuildContext context) {
                 return Row(
@@ -369,10 +429,10 @@ class _GameAppState extends State<GameApp> {
         return AlertDialog(
           title: const Text('Exit Game'),
           content: const Text('Do you really want to exit the game?'),
-          actions: <Widget>[
+          actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
+                Navigator.of(context).pop();
               },
               child: const Text('No'),
             ),

@@ -140,6 +140,7 @@ class Token extends PositionComponent with TapCallbacks {
   @override
   void onTapDown(TapDownEvent event) async {
     super.onTapDown(event);
+    print('DEBUG: Token ${tokenId} onTapDown called, enableToken: $enableToken, state: $state');
 
     final world = parent?.parent;
 
@@ -148,13 +149,18 @@ class Token extends PositionComponent with TapCallbacks {
         world is! World ||
         (isInBase() && GameState().diceNumber != 6) ||
         isInHome()) {
+      print('DEBUG: Token ${tokenId} cannot move - spaceToMove: ${spaceToMove()}, enableToken: $enableToken, world: ${world.runtimeType}, isInBase: ${isInBase()}, diceNumber: ${GameState().diceNumber}, isInHome: ${isInHome()}');
       return;
     }
 
     enableToken = false;
 
-    if (GameState().currentPlayer.playerId != playerId) return;
+    if (GameState().currentPlayer.playerId != playerId) {
+      print('DEBUG: Token ${tokenId} player mismatch - current: ${GameState().currentPlayer.playerId}, token: $playerId');
+      return;
+    }
 
+    print('DEBUG: Token ${tokenId} passed all checks, proceeding with move');
     final tokens = TokenManager().allTokens;
     for (var token in tokens) {
       token.disableCircleAnimation();
@@ -162,8 +168,10 @@ class Token extends PositionComponent with TapCallbacks {
     }
 
     if (GameState().diceNumber == 6) {
+      print('DEBUG: Token ${tokenId} handling dice 6 - canMoveFromBase: ${GameState().canMoveTokenFromBase}, canMoveOnBoard: ${GameState().canMoveTokenOnBoard}');
       // Handle movement logic
       if (state == TokenState.inBase && GameState().canMoveTokenFromBase) {
+        print('DEBUG: Moving token ${tokenId} out of base');
         moveOutOfBase(
           world: world,
           token: this,
@@ -172,6 +180,7 @@ class Token extends PositionComponent with TapCallbacks {
         // Consider reducing delay or making it conditional
       } else if (state == TokenState.onBoard &&
           GameState().canMoveTokenOnBoard) {
+        print('DEBUG: Moving token ${tokenId} forward on board');
         moveForward(
           world: world,
           token: this,
@@ -184,6 +193,7 @@ class Token extends PositionComponent with TapCallbacks {
 
     // Non-six logic
     if (state == TokenState.onBoard && GameState().canMoveTokenOnBoard) {
+      print('DEBUG: Moving token ${tokenId} forward (non-six)');
       moveForward(
         world: world,
         token: this,

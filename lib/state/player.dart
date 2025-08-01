@@ -9,6 +9,7 @@ class Player {
   bool hasWon; // Has the player won the game?
   int extraTurns; // Count of extra turns granted
   bool enableDice;
+  bool isBot; // Is the player controlled by a bot?
 
   // Constructor to initialize the player's attributes
   Player({
@@ -20,6 +21,7 @@ class Player {
     this.hasWon = false, // Default: player hasn't won yet
     this.extraTurns = 0,
     this.enableDice = false, // Default to 0 extra turns
+    this.isBot = false, // Default to false
   });
 
   // Helper method to check if all tokens are in base
@@ -29,7 +31,9 @@ class Player {
 
   // Helper method to get the tokens that are on the board
   List<Token> getTokensOnBoard() {
-    _cachedTokensOnBoard ??= tokens.where((token) => token.isOnBoard()).toList();
+    _cachedTokensOnBoard ??= tokens
+        .where((token) => token.isOnBoard())
+        .toList();
     return _cachedTokensOnBoard!;
   }
 
@@ -46,7 +50,7 @@ class Player {
   // Method to reset extra turns (including after three consecutive sixes)
   Future<void> resetExtraTurns() async {
     extraTurns = 0;
-    _cachedTokensOnBoard = null; 
+    _cachedTokensOnBoard = null;
     return Future.value();
   }
 

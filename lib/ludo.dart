@@ -21,14 +21,17 @@ import 'component/ui_components/token.dart';
 import 'component/ui_components/spot.dart';
 import 'component/ui_components/ludo_dice.dart';
 import 'component/ui_components/rank_modal_component.dart';
+import 'package:ludo_flame/state/bot_controller.dart';
 
 class Ludo extends FlameGame
     with HasCollisionDetection, KeyboardEvents, TapDetector {
-  List<String> teams;
+  // List<String> teams;
   final BuildContext context;
+  final List<String> selectedTeams;
+  final bool isVsComputer;
 
   // Add an unnamed constructor
-  Ludo(this.teams, this.context);
+  Ludo(this.selectedTeams, this.context, {this.isVsComputer = false});
 
   final rand = Random();
   double get width => size.x;
@@ -49,6 +52,7 @@ class Ludo extends FlameGame
   @override
   void onLoad() async {
     super.onLoad();
+    _initializePlayers();
     camera = CameraComponent.withFixedResolution(width: width, height: height);
     camera.viewfinder.anchor = Anchor.topLeft;
 
@@ -121,7 +125,93 @@ class Ludo extends FlameGame
       blinkRedBase(false);
     });
 
+    Player first = GameState().currentPlayer;
+    first.isCurrentTurn = true;
+    first.enableDice = true;
+    EventBus().emit(_pointerEventFor(first.playerId));
+
     await startGame();
+  }
+
+  Object _pointerEventFor(String playerId) {
+    switch (playerId) {
+      case 'GP':
+        return BlinkGreenBaseEvent();
+      case 'BP':
+        return BlinkBlueBaseEvent();
+      case 'RP':
+        return BlinkRedBaseEvent();
+      case 'YP':
+        return BlinkYellowBaseEvent();
+      default:
+        return SwitchPointerEvent();
+    }
+  }
+
+  void _initializePlayers() {
+    print('_initializePlayers: clearing players');
+    GameState().clearPlayers();
+    for (int i = 0; i < selectedTeams.length; i++) {
+      String teamId = selectedTeams[i];
+      List<Token> playerTokens = _createTokensForPlayer(teamId);
+      bool isBot = isVsComputer && i == 1;
+      Player player = Player(
+        playerId: teamId,
+        tokens: playerTokens,
+        isBot: isBot,
+      );
+      print(
+        '_initializePlayers: created ${teamId}, isBot=$isBot, tokens=${playerTokens.length}',
+      );
+      print('DEBUG: Player object isBot property: ${player.isBot}');
+      GameState().players.add(player);
+      print('DEBUG: After adding to GameState, player isBot: ${GameState().players.last.isBot}');
+    }
+    if (GameState().players.isNotEmpty) {
+      GameState().players[0].isCurrentTurn = true;
+      GameState().players[0].enableDice = true;
+    }
+    print(
+      '_initializePlayers: final list ${GameState().players.map((p) => '${p.playerId}(bot=${p.isBot})').join(', ')}',
+    );
+  }
+
+  List<Token> _createTokensForPlayer(String teamId) {
+    // Use your existing token creation logic here
+    // This should return the list of tokens for the given team
+    List<Token> tokens = [];
+
+    // Example implementation - adjust based on your existing code
+    for (int i = 1; i <= 4; i++) {
+      Token token = Token(
+        playerId: teamId,
+        enableToken: false,
+        tokenId: '${teamId[0]}T$i', // e.g., BT1, RT1, etc.
+        positionId: '${teamId[0]}$i', // Home position
+        position: Vector2(100, 100),
+        size: Vector2(50, 50),
+        topColor: _getTokenColor(teamId),
+        sideColor: _getTokenColor(teamId),
+      );
+      tokens.add(token);
+    }
+
+    return tokens;
+  }
+
+  Color _getTokenColor(String teamId) {
+    switch (teamId) {
+      case 'BP':
+        return Colors.blue;
+      case 'RP':
+        return Colors.red;
+      case 'GP':
+        return Colors.green;
+      case 'YP':
+        return Colors.yellow;
+      default:
+        return Colors.black;
+    }
   }
 
   void switchOffPointer() {
@@ -381,12 +471,22 @@ class Ludo extends FlameGame
 
   Future<void> startGame() async {
     await TokenManager().clearTokens();
+    // Store bot info before clearing
+    Map<String, bool> botInfo = {};
+    for (var player in GameState().players) {
+      botInfo[player.playerId] = player.isBot;
+      print('DEBUG: Storing bot info - ${player.playerId}: ${player.isBot}');
+    }
+    
+    print('DEBUG: Bot info map: $botInfo');
     await GameState().clearPlayers();
     await AudioManager.dispose();
 
     await AudioManager.initialize();
+    
+    print('DEBUG: startGame - players before processing: ${GameState().players.map((p) => '${p.playerId}(bot=${p.isBot})').join(', ')}');
 
-    for (var team in teams) {
+    for (var team in selectedTeams) {
       if (team == 'BP') {
         if (TokenManager().getBlueTokens().isEmpty) {
           TokenManager().initializeTokens(TokenManager().blueTokensBase);
@@ -425,19 +525,39 @@ class Ludo extends FlameGame
           const playerId = 'BP';
           // final tokens = TokenManager().getBlueTokens();
 
-          if (GameState().players.isEmpty) {
+          // Find existing player or create new one
+          Player? existingPlayer = GameState().players
+              .where((p) => p.playerId == playerId)
+              .firstOrNull;
+          
+          if (existingPlayer == null) {
             blinkBlueBase(true);
+            bool isBotPlayer = botInfo[playerId] ?? false;
+            print('DEBUG: Creating blue player $playerId with isBot: $isBotPlayer');
             Player bluePlayer = Player(
               playerId: playerId,
               tokens: TokenManager().getBlueTokens(),
               isCurrentTurn: true,
               enableDice: true,
+              isBot: isBotPlayer,
             );
             GameState().players.add(bluePlayer);
-            for (var token in TokenManager().getBlueTokens()) {
-              token.playerId = bluePlayer.playerId;
-              token.enableToken = true;
+            existingPlayer = bluePlayer;
+            print('DEBUG: Added blue player, isBot: ${bluePlayer.isBot}');
+          } else {
+            // Update existing player with tokens
+            existingPlayer.tokens = TokenManager().getBlueTokens();
+            if (GameState().players.indexOf(existingPlayer) == 0) {
+              existingPlayer.isCurrentTurn = true;
+              existingPlayer.enableDice = true;
+              blinkBlueBase(true);
             }
+          }
+          
+          for (var token in TokenManager().getBlueTokens()) {
+            token.playerId = existingPlayer.playerId;
+            token.enableToken = existingPlayer.isCurrentTurn;
+          }
 
             addDice() {
               // dice for player blue
@@ -455,22 +575,15 @@ class Ludo extends FlameGame
                   .first;
 
               leftDiceContainer.add(
-                LudoDice(player: bluePlayer, faceSize: leftDice.size.x * 0.70),
+                LudoDice(player: existingPlayer!, faceSize: leftDice.size.x * 0.70),
               );
-              lowerController.showPointer(bluePlayer.playerId);
+              lowerController.showPointer(existingPlayer!.playerId);
             }
 
-            addDice();
-          } else {
-            Player bluePlayer = Player(
-              playerId: playerId,
-              tokens: TokenManager().getBlueTokens(),
-            );
-            GameState().players.add(bluePlayer);
-            for (var token in TokenManager().getBlueTokens()) {
-              token.playerId = bluePlayer.playerId;
+            if (existingPlayer?.isCurrentTurn == true) {
+              addDice();
             }
-          }
+          // This else block is no longer needed as we handle both cases above
         }
       } else if (team == 'GP') {
         if (TokenManager().getGreenTokens().isEmpty) {
@@ -517,6 +630,7 @@ class Ludo extends FlameGame
               tokens: TokenManager().getGreenTokens(),
               isCurrentTurn: true,
               enableDice: true,
+              isBot: botInfo[playerId] ?? false,
             );
             GameState().players.add(greenPlayer);
             for (var token in TokenManager().getGreenTokens()) {
@@ -527,6 +641,7 @@ class Ludo extends FlameGame
             Player greenPlayer = Player(
               playerId: playerId,
               tokens: TokenManager().getGreenTokens(),
+              isBot: botInfo[playerId] ?? false,
             );
             GameState().players.add(greenPlayer);
             for (var token in TokenManager().getGreenTokens()) {
@@ -580,6 +695,7 @@ class Ludo extends FlameGame
               tokens: TokenManager().getYellowTokens(),
               isCurrentTurn: true,
               enableDice: true,
+              isBot: botInfo[playerId] ?? false,
             );
             GameState().players.add(yellowPlayer);
             for (var token in TokenManager().getYellowTokens()) {
@@ -614,6 +730,7 @@ class Ludo extends FlameGame
             Player yellowPlayer = Player(
               playerId: playerId,
               tokens: TokenManager().getYellowTokens(),
+              isBot: botInfo[playerId] ?? false,
             );
             GameState().players.add(yellowPlayer);
             for (var token in TokenManager().getYellowTokens()) {
@@ -660,19 +777,39 @@ class Ludo extends FlameGame
           const playerId = 'RP';
           // final tokens = TokenManager().getRedTokens();
 
-          if (GameState().players.isEmpty) {
+          // Find existing player or create new one
+          Player? existingPlayer = GameState().players
+              .where((p) => p.playerId == playerId)
+              .firstOrNull;
+          
+          if (existingPlayer == null) {
             blinkRedBase(true);
+            bool isBotPlayer = botInfo[playerId] ?? false;
+            print('DEBUG: Creating red player $playerId with isBot: $isBotPlayer');
             Player redPlayer = Player(
               playerId: playerId,
               tokens: TokenManager().getRedTokens(),
               isCurrentTurn: true,
               enableDice: true,
+              isBot: isBotPlayer,
             );
             GameState().players.add(redPlayer);
-            for (var token in TokenManager().getRedTokens()) {
-              token.playerId = redPlayer.playerId;
-              token.enableToken = true;
+            existingPlayer = redPlayer;
+            print('DEBUG: Added red player, isBot: ${redPlayer.isBot}');
+          } else {
+            // Update existing player with tokens
+            existingPlayer.tokens = TokenManager().getRedTokens();
+            if (GameState().players.indexOf(existingPlayer) == 0) {
+              existingPlayer.isCurrentTurn = true;
+              existingPlayer.enableDice = true;
+              blinkRedBase(true);
             }
+          }
+          
+          for (var token in TokenManager().getRedTokens()) {
+            token.playerId = existingPlayer.playerId;
+            token.enableToken = existingPlayer.isCurrentTurn;
+          }
 
             addDice() {
               // dice for player red
@@ -689,22 +826,14 @@ class Ludo extends FlameGame
                   .whereType<RectangleComponent>()
                   .first;
               rightDiceContainer.add(
-                LudoDice(player: redPlayer, faceSize: leftDice.size.x * 0.70),
+                LudoDice(player: existingPlayer!, faceSize: leftDice.size.x * 0.70),
               );
             }
 
-            addDice();
-          } else {
-            Player redPlayer = Player(
-              playerId: playerId,
-              tokens: TokenManager().getRedTokens(),
-            );
-            GameState().players.add(redPlayer);
-            for (var token in TokenManager().getRedTokens()) {
-              token.playerId = redPlayer.playerId;
-              token.enableToken = false;
+            if (existingPlayer?.isCurrentTurn == true) {
+              addDice();
             }
-          }
+          // This else block is no longer needed as we handle both cases above
         }
       }
     }
@@ -828,6 +957,14 @@ void tokenCollision(World world, Token attackerToken) async {
     final upperController = world.children.whereType<UpperController>().first;
     lowerController.showPointer(player.playerId);
     upperController.showPointer(player.playerId);
+    
+    // If it's a bot player and they get another turn, automatically make the next move
+    if (player.isBot) {
+      print('DEBUG: Bot gets another turn after token collision, calling makeMove');
+      Future.delayed(Duration(milliseconds: 1000), () {
+        BotController.instance.makeMove(player);
+      });
+    }
   }
 
   for (var token in player.tokens) {
@@ -1110,5 +1247,14 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
   }
 
   player.grantAnotherTurn();
+  
+  // If it's a bot player, automatically make the next move
+  if (player.isBot) {
+    print('DEBUG: Bot token reached home, gets another turn, calling makeMove');
+    Future.delayed(Duration(milliseconds: 1000), () {
+      BotController.instance.makeMove(player);
+    });
+  }
+  
   return true;
 }
