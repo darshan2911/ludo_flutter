@@ -23,6 +23,9 @@ class LudoDice extends PositionComponent with TapCallbacks {
   static const double innerSizeFactor =
       0.9; // Precomputed factor for inner size
 
+  // Bot luck alternation tracker
+  static bool _botIsLucky = false;
+
   // final gameState = GameState();
   final double faceSize; // size of the square
   late final double borderRadius; // radius of the curved edges
@@ -72,7 +75,23 @@ class LudoDice extends PositionComponent with TapCallbacks {
     }
 
     // Roll the dice and update the dice face
-    GameState().diceNumber = Random().nextInt(6) + 1;
+    if (player.isBot) {
+      // Bot alternating luck system
+      if (_botIsLucky) {
+        // Lucky roll: 4-6
+        GameState().diceNumber = Random().nextInt(3) + 4;
+        print('DEBUG: Bot lucky roll: ${GameState().diceNumber}');
+      } else {
+        // Normal roll: 1-6
+        GameState().diceNumber = Random().nextInt(6) + 1;
+        print('DEBUG: Bot normal roll: ${GameState().diceNumber}');
+      }
+      // Alternate luck for next roll
+      _botIsLucky = !_botIsLucky;
+    } else {
+      // Human player: always normal roll
+      GameState().diceNumber = Random().nextInt(6) + 1;
+    }
     diceFace.updateDiceValue(GameState().diceNumber);
 
     await Future.delayed(const Duration(milliseconds: 300));

@@ -5,7 +5,6 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:ludo_flame/bot_difficulty_screen.dart';
 import 'package:ludo_flame/ludo.dart';
 import 'package:ludo_flame/state/bot_controller.dart';
 // user files
@@ -82,10 +81,18 @@ class FirstScreenState extends State<FirstScreen> {
                       padding: EdgeInsets.symmetric(vertical: 15),
                     ),
                     onPressed: () {
+                      BotController.instance.setBotDifficulty(
+                        BotDifficulty.hard,
+                      );
+
+                      // Start VS Computer game
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const BotDifficultyScreen(),
+                          builder: (context) => const GameApp(
+                            selectedTeams: ['BP', 'GP'], // Human vs Bot
+                            isVsComputer: true,
+                          ),
                         ),
                       );
                     },
