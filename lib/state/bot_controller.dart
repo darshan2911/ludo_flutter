@@ -135,19 +135,8 @@ class BotController {
         'DEBUG: Bot chose token ${bestToken.tokenId} at position ${bestToken.positionId}',
       );
       
-      // Play step sound for bot move
-      AudioManager.playStepSound();
-      
-      // Create a mock TapDownEvent for the bot
-      final mockEvent = TapDownEvent(
-        1, // deviceId
-        bestToken.findGame()!, // game
-        TapDownDetails(
-          globalPosition: bestToken.position.toOffset(),
-          localPosition: bestToken.position.toOffset(),
-        ),
-      );
-      bestToken.onTapDown(mockEvent);
+      // Execute bot move programmatically (bypasses tap restrictions)
+      await bestToken.executeBotMove();
     } else {
       print('DEBUG: Bot could not find a token to move');
     }

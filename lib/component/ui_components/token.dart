@@ -140,7 +140,18 @@ class Token extends PositionComponent with TapCallbacks {
   @override
   void onTapDown(TapDownEvent event) async {
     super.onTapDown(event);
-    print('DEBUG: Token ${tokenId} onTapDown called, enableToken: $enableToken, state: $state');
+    print(
+      'DEBUG: Token ${tokenId} onTapDown called, enableToken: $enableToken, state: $state',
+    );
+
+    // Block ALL manual user taps on bot tokens in vs computer mode
+    if (GameState().isVsComputerGame()) {
+      final botPlayer = GameState().getBotPlayer();
+      if (botPlayer != null && playerId == botPlayer.playerId) {
+        print('DEBUG: Manual user tap blocked on bot token ${tokenId}');
+        return;
+      }
+    }
 
     final world = parent?.parent;
 
@@ -149,14 +160,18 @@ class Token extends PositionComponent with TapCallbacks {
         world is! World ||
         (isInBase() && GameState().diceNumber != 6) ||
         isInHome()) {
-      print('DEBUG: Token ${tokenId} cannot move - spaceToMove: ${spaceToMove()}, enableToken: $enableToken, world: ${world.runtimeType}, isInBase: ${isInBase()}, diceNumber: ${GameState().diceNumber}, isInHome: ${isInHome()}');
+      print(
+        'DEBUG: Token ${tokenId} cannot move - spaceToMove: ${spaceToMove()}, enableToken: $enableToken, world: ${world.runtimeType}, isInBase: ${isInBase()}, diceNumber: ${GameState().diceNumber}, isInHome: ${isInHome()}',
+      );
       return;
     }
 
     enableToken = false;
 
     if (GameState().currentPlayer.playerId != playerId) {
-      print('DEBUG: Token ${tokenId} player mismatch - current: ${GameState().currentPlayer.playerId}, token: $playerId');
+      print(
+        'DEBUG: Token ${tokenId} player mismatch - current: ${GameState().currentPlayer.playerId}, token: $playerId',
+      );
       return;
     }
 
@@ -168,7 +183,9 @@ class Token extends PositionComponent with TapCallbacks {
     }
 
     if (GameState().diceNumber == 6) {
-      print('DEBUG: Token ${tokenId} handling dice 6 - canMoveFromBase: ${GameState().canMoveTokenFromBase}, canMoveOnBoard: ${GameState().canMoveTokenOnBoard}');
+      print(
+        'DEBUG: Token ${tokenId} handling dice 6 - canMoveFromBase: ${GameState().canMoveTokenFromBase}, canMoveOnBoard: ${GameState().canMoveTokenOnBoard}',
+      );
       // Handle movement logic
       if (state == TokenState.inBase && GameState().canMoveTokenFromBase) {
         print('DEBUG: Moving token ${tokenId} out of base');
@@ -209,5 +226,72 @@ class Token extends PositionComponent with TapCallbacks {
     final newIndex = index + GameState().diceNumber;
 
     return newIndex < tokenPath.length;
+  }
+
+  /// Programmatic move method for bot (bypasses tap restrictions)
+  Future<void> executeBotMove() async {
+    print(
+      'DEBUG: Token ${tokenId} executeBotMove called, enableToken: $enableToken, state: $state',
+    );
+
+    final world = parent?.parent;
+
+    if (!spaceToMove() ||
+        !enableToken ||
+        world is! World ||
+        (isInBase() && GameState().diceNumber != 6) ||
+        isInHome()) {
+      print(
+        'DEBUG: Bot token ${tokenId} cannot move - spaceToMove: ${spaceToMove()}, enableToken: $enableToken, world: ${world.runtimeType}, isInBase: ${isInBase()}, diceNumber: ${GameState().diceNumber}, isInHome: ${isInHome()}',
+      );
+      return;
+    }
+
+    enableToken = false;
+
+    if (GameState().currentPlayer.playerId != playerId) {
+      print(
+        'DEBUG: Bot token ${tokenId} player mismatch - current: ${GameState().currentPlayer.playerId}, token: $playerId',
+      );
+      return;
+    }
+
+    print('DEBUG: Bot token ${tokenId} executing move');
+    final tokens = TokenManager().allTokens;
+    for (var token in tokens) {
+      token.disableCircleAnimation();
+      token.enableToken = false;
+    }
+
+    if (GameState().diceNumber == 6) {
+      if (state == TokenState.inBase && GameState().canMoveTokenFromBase) {
+        print('DEBUG: Bot moving token ${tokenId} out of base');
+        moveOutOfBase(
+          world: world,
+          token: this,
+          tokenPath: GameState().getTokenPath(playerId),
+        );
+      } else if (state == TokenState.onBoard &&
+          GameState().canMoveTokenOnBoard) {
+        print('DEBUG: Bot moving token ${tokenId} forward on board');
+        moveForward(
+          world: world,
+          token: this,
+          tokenPath: GameState().getTokenPath(playerId),
+          diceNumber: GameState().diceNumber,
+        );
+      }
+      return;
+    }
+
+    if (state == TokenState.onBoard && GameState().canMoveTokenOnBoard) {
+      print('DEBUG: Bot moving token ${tokenId} forward (non-six)');
+      moveForward(
+        world: world,
+        token: this,
+        tokenPath: GameState().getTokenPath(playerId),
+        diceNumber: GameState().diceNumber,
+      );
+    }
   }
 }

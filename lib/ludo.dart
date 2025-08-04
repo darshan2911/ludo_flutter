@@ -165,7 +165,9 @@ class Ludo extends FlameGame
       );
       print('DEBUG: Player object isBot property: ${player.isBot}');
       GameState().players.add(player);
-      print('DEBUG: After adding to GameState, player isBot: ${GameState().players.last.isBot}');
+      print(
+        'DEBUG: After adding to GameState, player isBot: ${GameState().players.last.isBot}',
+      );
     }
     if (GameState().players.isNotEmpty) {
       GameState().players[0].isCurrentTurn = true;
@@ -477,14 +479,16 @@ class Ludo extends FlameGame
       botInfo[player.playerId] = player.isBot;
       print('DEBUG: Storing bot info - ${player.playerId}: ${player.isBot}');
     }
-    
+
     print('DEBUG: Bot info map: $botInfo');
     await GameState().clearPlayers();
     await AudioManager.dispose();
 
     await AudioManager.initialize();
-    
-    print('DEBUG: startGame - players before processing: ${GameState().players.map((p) => '${p.playerId}(bot=${p.isBot})').join(', ')}');
+
+    print(
+      'DEBUG: startGame - players before processing: ${GameState().players.map((p) => '${p.playerId}(bot=${p.isBot})').join(', ')}',
+    );
 
     for (var team in selectedTeams) {
       if (team == 'BP') {
@@ -529,11 +533,13 @@ class Ludo extends FlameGame
           Player? existingPlayer = GameState().players
               .where((p) => p.playerId == playerId)
               .firstOrNull;
-          
+
           if (existingPlayer == null) {
             blinkBlueBase(true);
             bool isBotPlayer = botInfo[playerId] ?? false;
-            print('DEBUG: Creating blue player $playerId with isBot: $isBotPlayer');
+            print(
+              'DEBUG: Creating blue player $playerId with isBot: $isBotPlayer',
+            );
             Player bluePlayer = Player(
               playerId: playerId,
               tokens: TokenManager().getBlueTokens(),
@@ -553,36 +559,38 @@ class Ludo extends FlameGame
               blinkBlueBase(true);
             }
           }
-          
+
           for (var token in TokenManager().getBlueTokens()) {
             token.playerId = existingPlayer.playerId;
             token.enableToken = existingPlayer.isCurrentTurn;
           }
 
-            addDice() {
-              // dice for player blue
-              final lowerController = world.children
-                  .whereType<LowerController>()
-                  .first;
-              final lowerControllerComponents = lowerController.children
-                  .toList();
-              final leftDice = lowerControllerComponents[0].children
-                  .whereType<RectangleComponent>()
-                  .first;
+          addDice() {
+            // dice for player blue
+            final lowerController = world.children
+                .whereType<LowerController>()
+                .first;
+            final lowerControllerComponents = lowerController.children.toList();
+            final leftDice = lowerControllerComponents[0].children
+                .whereType<RectangleComponent>()
+                .first;
 
-              final leftDiceContainer = leftDice.children
-                  .whereType<RectangleComponent>()
-                  .first;
+            final leftDiceContainer = leftDice.children
+                .whereType<RectangleComponent>()
+                .first;
 
-              leftDiceContainer.add(
-                LudoDice(player: existingPlayer!, faceSize: leftDice.size.x * 0.70),
-              );
-              lowerController.showPointer(existingPlayer!.playerId);
-            }
+            leftDiceContainer.add(
+              LudoDice(
+                player: existingPlayer!,
+                faceSize: leftDice.size.x * 0.70,
+              ),
+            );
+            lowerController.showPointer(existingPlayer!.playerId);
+          }
 
-            if (existingPlayer?.isCurrentTurn == true) {
-              addDice();
-            }
+          if (existingPlayer?.isCurrentTurn == true) {
+            addDice();
+          }
           // This else block is no longer needed as we handle both cases above
         }
       } else if (team == 'GP') {
@@ -781,11 +789,13 @@ class Ludo extends FlameGame
           Player? existingPlayer = GameState().players
               .where((p) => p.playerId == playerId)
               .firstOrNull;
-          
+
           if (existingPlayer == null) {
             blinkRedBase(true);
             bool isBotPlayer = botInfo[playerId] ?? false;
-            print('DEBUG: Creating red player $playerId with isBot: $isBotPlayer');
+            print(
+              'DEBUG: Creating red player $playerId with isBot: $isBotPlayer',
+            );
             Player redPlayer = Player(
               playerId: playerId,
               tokens: TokenManager().getRedTokens(),
@@ -805,34 +815,36 @@ class Ludo extends FlameGame
               blinkRedBase(true);
             }
           }
-          
+
           for (var token in TokenManager().getRedTokens()) {
             token.playerId = existingPlayer.playerId;
             token.enableToken = existingPlayer.isCurrentTurn;
           }
 
-            addDice() {
-              // dice for player red
-              final upperController = world.children
-                  .whereType<UpperController>()
-                  .first;
-              final upperControllerComponents = upperController.children
-                  .toList();
-              final leftDice = upperControllerComponents[0].children
-                  .whereType<RectangleComponent>()
-                  .first;
+          addDice() {
+            // dice for player red
+            final upperController = world.children
+                .whereType<UpperController>()
+                .first;
+            final upperControllerComponents = upperController.children.toList();
+            final leftDice = upperControllerComponents[0].children
+                .whereType<RectangleComponent>()
+                .first;
 
-              final rightDiceContainer = leftDice.children
-                  .whereType<RectangleComponent>()
-                  .first;
-              rightDiceContainer.add(
-                LudoDice(player: existingPlayer!, faceSize: leftDice.size.x * 0.70),
-              );
-            }
+            final rightDiceContainer = leftDice.children
+                .whereType<RectangleComponent>()
+                .first;
+            rightDiceContainer.add(
+              LudoDice(
+                player: existingPlayer!,
+                faceSize: leftDice.size.x * 0.70,
+              ),
+            );
+          }
 
-            if (existingPlayer?.isCurrentTurn == true) {
-              addDice();
-            }
+          if (existingPlayer?.isCurrentTurn == true) {
+            addDice();
+          }
           // This else block is no longer needed as we handle both cases above
         }
       }
@@ -941,7 +953,9 @@ void tokenCollision(World world, Token attackerToken) async {
   bool shouldGetExtraTurn = false;
 
   if (wasTokenAttacked) {
-    print('DEBUG: Token was captured by ${player.playerId}, granting extra turn');
+    print(
+      'DEBUG: Token was captured by ${player.playerId}, granting extra turn',
+    );
     if (player.hasRolledThreeConsecutiveSixes()) {
       await Future.delayed(Duration(seconds: 1));
       player.resetExtraTurns();
@@ -966,10 +980,12 @@ void tokenCollision(World world, Token attackerToken) async {
     final upperController = world.children.whereType<UpperController>().first;
     lowerController.showPointer(player.playerId);
     upperController.showPointer(player.playerId);
-    
+
     // If it's a bot player and they get another turn, automatically make the next move
     if (player.isBot) {
-      print('DEBUG: Bot ${player.playerId} gets another turn, calling makeMove');
+      print(
+        'DEBUG: Bot ${player.playerId} gets another turn, calling makeMove',
+      );
       Future.delayed(Duration(milliseconds: 1000), () {
         BotController.instance.makeMove(player);
       });
@@ -1056,7 +1072,7 @@ Future<void> moveBackward({
     token.positionId = tokenPath[i];
 
     if (!audioPlayed) {
-      FlameAudio.play('move.mp3');
+      AudioManager.playMoveSound();
       audioPlayed = true;
     }
 
@@ -1256,7 +1272,7 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
   }
 
   player.grantAnotherTurn();
-  
+
   // If it's a bot player, automatically make the next move
   if (player.isBot) {
     print('DEBUG: Bot token reached home, gets another turn, calling makeMove');
@@ -1264,6 +1280,6 @@ Future<bool> checkTokenInHomeAndHandle(Token token, World world) async {
       BotController.instance.makeMove(player);
     });
   }
-  
+
   return true;
 }
