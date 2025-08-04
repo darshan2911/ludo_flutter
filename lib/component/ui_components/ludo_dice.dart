@@ -203,6 +203,7 @@ class LudoDice extends PositionComponent with TapCallbacks {
     LudoBoard ludoBoard,
     int diceNumber,
   ) async {
+    player.extraTurns = 0;
     final tokensOnBoard = player.tokens
         .where((token) => token.state == TokenState.onBoard)
         .toList();
